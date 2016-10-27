@@ -3,6 +3,8 @@ public class Test {
     public static void main(String[] args) throws Exception {
         ArrayList<MathNode> forest = new ArrayList<MathNode>();
         
+        /*
+        
         // Test 1 -- Expression given in class.
         MathNode tree1 = new DivNode(
             new NumNode(1),
@@ -61,6 +63,25 @@ public class Test {
             ex.printStackTrace();
         }
         
+        */
+        
+        // Test 5 -- Example textual tree given in assignment.
+        MathNode tree5 = new AddNode(
+            new NumNode(11),
+            new MultNode(
+                new DivNode(
+                    new NumNode(1),
+                    new NumNode(2)),
+                new SubNode(
+                    new AddNode(
+                        new NumNode(3),
+                        new NumNode(-5)),
+                    new NumNode(45))),
+            new NumNode(-23)
+        );
+        forest.add(tree5);
+        
+        
         // Test all created trees.
         testTrees(forest);
     }
@@ -79,9 +100,9 @@ public class Test {
             tree.accept(lisp);
             System.out.println("Lisp expression: " + lisp.toString());
             
-            MathNodeVisitor tprinter = new TreeVisitor();
-            tree.accept(tprinter);
-            System.out.println("Tree expression: \n" + tprinter.toString());
+            MathNodeVisitor textree = new TextTreeVisitor();
+            tree.accept(textree);
+            System.out.println("Text-tree expression: \n" + textree.toString());
             
         }
     }
@@ -89,14 +110,15 @@ public class Test {
 }
 
 abstract class MathNodeVisitor {
-    public abstract void visit(MathNode node); // defined by concrete visitors.
+    // The visit operation is defined by concrete visitors.
+    public abstract void visit(MathNode node);
 }
 
 // For a given math node, get the infix string representation from it.
 class InfixVisitor extends MathNodeVisitor {
     private MathNode m;
     public void visit(MathNode m) { this.m = m; }
-    public String toString() { return Infix(this.m); } // Calls the recursive Infix String maker.
+    public String toString() { return Infix(this.m); }
     
     private static String Infix(MathNode m) {
         int size = m.children.size();
@@ -143,13 +165,27 @@ class LispVisitor extends MathNodeVisitor {
 }
 
 
-class TreeVisitor extends MathNodeVisitor {
+class TextTreeVisitor extends MathNodeVisitor {
     private MathNode m;
     public void visit(MathNode m) { this.m = m; }
-    public String toString() { return Tree(this.m); }
+    public String toString() { return Tree("", this.m); }
 
-    private static String Tree(MathNode m) {
-        
+    private static String Tree(String indent, MathNode m) {
+        int size = m.children.size();
+        if (size == 0) {
+            return "[" + m.toString() + "]\n";
+        } else {
+            String trunk = "[" + m.toString() + "]\n";
+            String branch = "";
+            for (int i = 0; i < size; i++) {
+                if (i != size-1)
+                    branch += indent + "+---" + Tree(indent + " |   ", m.children.get(i));
+                else
+                    branch += indent + "+---" + Tree(indent + "     ", m.children.get(i));
+            }
+            trunk += branch;
+            return trunk;
+        }
         
     }
 }
