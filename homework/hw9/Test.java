@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 public class Test {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ArrayList<MathNode> forest = new ArrayList<MathNode>();
         
         // Test 1 -- Expression given in class.
@@ -24,7 +24,8 @@ public class Test {
                 new NumNode(0),
                 new NumNode(-1)),
             new SubNode(
-                new NumNode(1)),
+                new NumNode(-1),
+                new NumNode(15)),
             new DivNode(
                 new MultNode(
                     new NumNode(4),
@@ -185,7 +186,9 @@ class NumNode extends MathNode {
 
 // Associative operations -- order does not matter.
 class AddNode extends MathNode {
-    public AddNode(MathNode... nodes) {
+    public AddNode(MathNode... nodes) throws Exception {
+        if (nodes.length <= 1)
+            throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
         this.value = 0;
     }
@@ -198,7 +201,9 @@ class AddNode extends MathNode {
     public String toString() { return "+"; }
 }
 class MultNode extends MathNode {
-    public MultNode(MathNode... nodes) {
+    public MultNode(MathNode... nodes) throws Exception {
+        if (nodes.length <= 1)
+            throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
         this.value = 1;
     }
@@ -213,17 +218,21 @@ class MultNode extends MathNode {
 
 // Non-associative operations -- order matters.
 class SubNode extends MathNode {
-    public SubNode(MathNode... nodes) {
+    public SubNode(MathNode... nodes) throws Exception {
+        if (nodes.length <= 1)
+            throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
         this.value = 0;
     }
     public double calculate() {
+        /*
         double difference = 0;
         if (this.children.size() == 1)
             difference -= this.children.get(0).calculate();
         if (this.children.size() > 1)
             difference = this.children.get(0).calculate();
-
+        */
+        double difference = this.children.get(0).calculate();
         for (int i = 1; i < this.children.size(); i++)
             difference -= this.children.get(i).calculate();
         return difference;
@@ -231,17 +240,21 @@ class SubNode extends MathNode {
     public String toString() { return "-"; }
 }
 class DivNode extends MathNode {
-    public DivNode(MathNode... nodes) {
+    public DivNode(MathNode... nodes) throws Exception  {
+        if (nodes.length <= 1)
+            throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
         this.value = 1;
     }
     public double calculate() {
+        /*
         double quotient = 1;
         if (this.children.size() == 1)
             quotient /= this.children.get(0).calculate();
         if (this.children.size() > 1)
             quotient = this.children.get(0).calculate();
-
+        */
+        double quotient = this.children.get(0).calculate();
         for (int i = 1; i < this.children.size(); i++)
             quotient /= this.children.get(i).calculate();
         return quotient;
