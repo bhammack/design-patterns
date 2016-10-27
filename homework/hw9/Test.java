@@ -104,6 +104,9 @@ public class Test {
             tree.accept(textree);
             System.out.println("Text-tree expression: \n" + textree.toString());
             
+            MathNodeVisitor calculator = new CalculateVisitor();
+            tree.accept(calculator);
+            System.out.println("Calculated expression: " + calculator.toString());
         }
     }
 
@@ -168,9 +171,9 @@ class LispVisitor extends MathNodeVisitor {
 class TextTreeVisitor extends MathNodeVisitor {
     private MathNode m;
     public void visit(MathNode m) { this.m = m; }
-    public String toString() { return Tree("", this.m); }
+    public String toString() { return Treeify(" ", this.m); }
 
-    private static String Tree(String indent, MathNode m) {
+    private static String Treeify(String indent, MathNode m) {
         int size = m.children.size();
         if (size == 0) {
             return "[" + m.toString() + "]\n";
@@ -179,17 +182,37 @@ class TextTreeVisitor extends MathNodeVisitor {
             String branch = "";
             for (int i = 0; i < size; i++) {
                 if (i != size-1)
-                    branch += indent + "+---" + Tree(indent + " |   ", m.children.get(i));
+                    branch += indent + "+---" + Treeify(indent + "|    ", m.children.get(i));
                 else
-                    branch += indent + "+---" + Tree(indent + "     ", m.children.get(i));
+                    branch += indent + "+---" + Treeify(indent + "     ", m.children.get(i));
             }
             trunk += branch;
             return trunk;
         }
-        
     }
 }
 
+
+class CalculateVisitor extends MathNodeVisitor {
+    private MathNode m;
+    public double result;
+    public void visit(MathNode m) {
+        this.m = m;
+        
+    }
+    // Let's have the visitor traverse the tree and calculate.
+    public String toString() {
+        result = 0;
+        return Double.toString(this.compute());
+    }
+    
+    private double compute(MathNode m) {
+        
+        
+    }
+    
+    
+}
 
 
 
@@ -198,16 +221,12 @@ class TextTreeVisitor extends MathNodeVisitor {
 // Abstract base class for AddNode, SubNode, MultNode, and DivNode.
 // Also abstract base class for NumNode, which is isomorphic to a Leaf.
 abstract class MathNode {
-    // All nodes need have a parent except for the root.
-    public MathNode parent = null;
     // All nodes should have children, except NumNodes, which are leaves.
     public ArrayList<MathNode> children = new ArrayList<MathNode>();
     // All operational math nodes call this method to populate their children.
     protected void populate(MathNode... nodes) {
-        for (MathNode node : nodes) {
-            node.parent = this;
+        for (MathNode node : nodes)
             this.children.add(node);
-        }
     }
     
     // Visit is abstract -- different per concrete visitor.
