@@ -38,7 +38,7 @@ public class Test {
         forest.add(tree2);
         
         
-        // Test 3 -- Fibonacci.
+        // Test 3 -- simple additive tree.
         MathNode tree3 = new AddNode(
             new NumNode(0),
             new AddNode( new NumNode(1),
@@ -49,6 +49,17 @@ public class Test {
         )))));
         forest.add(tree3);
         
+        // Test 4 -- Example of an invalid arithmetic tree.
+        try {
+            MathNode badtree = new AddNode(
+                new NumNode(5),
+                new SubNode(
+                    new NumNode(5))
+            );
+        } catch (Exception ex) {
+            System.out.println("[========[ sample invalid tree ]========]");
+            ex.printStackTrace();
+        }
         
         // Test all created trees.
         testTrees(forest);
@@ -68,6 +79,9 @@ public class Test {
             tree.accept(lisp);
             System.out.println("Lisp expression: " + lisp.toString());
             
+            MathNodeVisitor tprinter = new TreeVisitor();
+            tree.accept(tprinter);
+            System.out.println("Tree expression: \n" + tprinter.toString());
             
         }
     }
@@ -76,8 +90,6 @@ public class Test {
 
 abstract class MathNodeVisitor {
     public abstract void visit(MathNode node); // defined by concrete visitors.
-    //private MathNode m;
-    //public void visit(MathNode m) { this.m = m; }
 }
 
 // For a given math node, get the infix string representation from it.
@@ -90,12 +102,8 @@ class InfixVisitor extends MathNodeVisitor {
         int size = m.children.size();
         if (size == 0) {
             // Bottom of recursion. Return NumNode number.
-            // This should be a numerical value. NOT AN OP NODE!
             return m.toString();
-        } else if (size == 1) {
-            // This should be a numerical value. Add the identity and evaluate.
-            return "(" + m.value + " " + m.toString() + " " + m.children.get(0) + ")";
-        } else if (size >= 2) {
+        } else {
             // Print the recursive infix expression.
             String exp = "(";
             for (int i = 0; i < size; i++) {
@@ -107,7 +115,6 @@ class InfixVisitor extends MathNodeVisitor {
             exp += ")";
             return exp;
         }
-        return null;
     }
 }
 
@@ -115,11 +122,12 @@ class InfixVisitor extends MathNodeVisitor {
 class LispVisitor extends MathNodeVisitor {
     private MathNode m;
     public void visit(MathNode m) { this.m = m; }
+    public String toString() { return Lisp(this.m); }
     
     private static String Lisp(MathNode m) {
         int size = m.children.size();
         if (size == 0) { return m.toString(); }
-        else if (size > 0) {
+        else {
             String exp = "(";
             exp += m.toString() + " ";
             for (int i = 0; i < size; i++) {
@@ -130,12 +138,21 @@ class LispVisitor extends MathNodeVisitor {
             exp += ")";
             return exp;
         }
-        return null;
     }
     
-    public String toString() { return Lisp(this.m); }
 }
 
+
+class TreeVisitor extends MathNodeVisitor {
+    private MathNode m;
+    public void visit(MathNode m) { this.m = m; }
+    public String toString() { return Tree(this.m); }
+
+    private static String Tree(MathNode m) {
+        
+        
+    }
+}
 
 
 
@@ -149,9 +166,6 @@ abstract class MathNode {
     public MathNode parent = null;
     // All nodes should have children, except NumNodes, which are leaves.
     public ArrayList<MathNode> children = new ArrayList<MathNode>();
-    // The identity element if an operative node, the value if a NumNode.
-    public int value;
-    
     // All operational math nodes call this method to populate their children.
     protected void populate(MathNode... nodes) {
         for (MathNode node : nodes) {
@@ -176,6 +190,7 @@ abstract class MathNode {
 // Using doubles to save a bunch of casting.
 class NumNode extends MathNode {
     //private double value;
+    private int value;
     public NumNode(int value) { this.value = value; }
     public double calculate() { return this.value; }
     public String toString() { return Integer.toString(this.value); }
@@ -190,7 +205,6 @@ class AddNode extends MathNode {
         if (nodes.length <= 1)
             throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
-        this.value = 0;
     }
     public double calculate() {
         double sum = 0;
@@ -200,12 +214,13 @@ class AddNode extends MathNode {
     }
     public String toString() { return "+"; }
 }
+
+
 class MultNode extends MathNode {
     public MultNode(MathNode... nodes) throws Exception {
         if (nodes.length <= 1)
             throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
-        this.value = 1;
     }
     public double calculate() {
         double product = 1;
@@ -216,22 +231,15 @@ class MultNode extends MathNode {
     public String toString() { return "*"; }
 }
 
+
 // Non-associative operations -- order matters.
 class SubNode extends MathNode {
     public SubNode(MathNode... nodes) throws Exception {
         if (nodes.length <= 1)
             throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
-        this.value = 0;
     }
     public double calculate() {
-        /*
-        double difference = 0;
-        if (this.children.size() == 1)
-            difference -= this.children.get(0).calculate();
-        if (this.children.size() > 1)
-            difference = this.children.get(0).calculate();
-        */
         double difference = this.children.get(0).calculate();
         for (int i = 1; i < this.children.size(); i++)
             difference -= this.children.get(i).calculate();
@@ -239,21 +247,15 @@ class SubNode extends MathNode {
     }
     public String toString() { return "-"; }
 }
+
+
 class DivNode extends MathNode {
     public DivNode(MathNode... nodes) throws Exception  {
         if (nodes.length <= 1)
             throw new Exception("arithmetic operations require at least two operands!");
         this.populate(nodes);
-        this.value = 1;
     }
     public double calculate() {
-        /*
-        double quotient = 1;
-        if (this.children.size() == 1)
-            quotient /= this.children.get(0).calculate();
-        if (this.children.size() > 1)
-            quotient = this.children.get(0).calculate();
-        */
         double quotient = this.children.get(0).calculate();
         for (int i = 1; i < this.children.size(); i++)
             quotient /= this.children.get(i).calculate();
