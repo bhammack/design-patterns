@@ -3,7 +3,7 @@ public class Test {
     public static void main(String[] args) throws Exception {
         ArrayList<MathNode> forest = new ArrayList<MathNode>();
         
-        /*
+        
         
         // Test 1 -- Expression given in class.
         MathNode tree1 = new DivNode(
@@ -18,7 +18,7 @@ public class Test {
             )
         );
         forest.add(tree1);
-
+        
         // Test 2 -- Test of all operations.
         // (0+-1) / (-1) / ((4*0.1) / (9-10)) = -2.5
         MathNode tree2 = new DivNode(
@@ -63,8 +63,6 @@ public class Test {
             ex.printStackTrace();
         }
         
-        */
-        
         // Test 5 -- Example textual tree given in assignment.
         MathNode tree5 = new AddNode(
             new NumNode(11),
@@ -90,23 +88,22 @@ public class Test {
     public static void testTrees(ArrayList<MathNode> trees) {
         for (MathNode tree : trees) {
             System.out.println("[========[ testing arithmetic tree ]========]");
-            System.out.println("Computed value: " + tree.evaluate());
             
             MathNodeVisitor infix = new InfixVisitor();
             tree.accept(infix);
-            System.out.println("Infix expression: " + infix.toString());
+            System.out.println("Infix:\t" + infix.toString());
             
             MathNodeVisitor lisp = new LispVisitor();
             tree.accept(lisp);
-            System.out.println("Lisp expression: " + lisp.toString());
+            System.out.println("Lisp:\t" + lisp.toString());
+            
+            MathNodeVisitor calculator = new ValueVisitor();
+            tree.accept(calculator);
+            System.out.println("Value:\t" + calculator.toString());
             
             MathNodeVisitor textree = new TextTreeVisitor();
             tree.accept(textree);
-            System.out.println("Text-tree expression: \n" + textree.toString());
-            
-            MathNodeVisitor calculator = new CalculateVisitor();
-            tree.accept(calculator);
-            System.out.println("Calculated expression: " + calculator.toString());
+            System.out.println("Text-tree:\n" + textree.toString());
         }
     }
 
@@ -130,14 +127,17 @@ class InfixVisitor extends MathNodeVisitor {
             return m.toString();
         } else {
             // Print the recursive infix expression.
-            String exp = "(";
+            String exp = "";
+            if (m.parent != null)
+                exp += "(";
             for (int i = 0; i < size; i++) {
                 exp += Infix(m.children.get(i));
                 if (i < size-1) {
                     exp += " " + m.toString() + " ";
                 }
             }
-            exp += ")";
+            if (m.parent != null)
+                exp += ")";
             return exp;
         }
     }
@@ -172,46 +172,43 @@ class TextTreeVisitor extends MathNodeVisitor {
     private MathNode m;
     public void visit(MathNode m) { this.m = m; }
     public String toString() { return Treeify(" ", this.m); }
-
+    // Similar to printing the Composite structure in hw8, we need to know the indent.
+    // The initial indent is a space to fix allignment with the first bracket.
     private static String Treeify(String indent, MathNode m) {
         int size = m.children.size();
         if (size == 0) {
             return "[" + m.toString() + "]\n";
         } else {
-            String trunk = "[" + m.toString() + "]\n";
+            String stem = "[" + m.toString() + "]\n";
             String branch = "";
             for (int i = 0; i < size; i++) {
                 if (i != size-1)
+                    // There are still children. Print a pipe.
                     branch += indent + "+---" + Treeify(indent + "|    ", m.children.get(i));
                 else
+                    // No child underneath me. Remove the pipe.
                     branch += indent + "+---" + Treeify(indent + "     ", m.children.get(i));
             }
-            trunk += branch;
-            return trunk;
+            // Readd the new branch to the main stem.
+            stem += branch;
+            return stem;
         }
     }
 }
 
-
-class CalculateVisitor extends MathNodeVisitor {
+// Not quite sure why Dave's asking for a value visitor.
+// The only way I've been able to come up with to calculate the result is via
+// having the nodes calculate the values of their children, which is an implicit
+// traversal via the given operation node.
+class ValueVisitor extends MathNodeVisitor {
     private MathNode m;
-    public double result;
+    private double result;
     public void visit(MathNode m) {
         this.m = m;
-        
+        this.result = m.calculate();
     }
-    // Let's have the visitor traverse the tree and calculate.
-    public String toString() {
-        result = 0;
-        return Double.toString(this.compute());
-    }
-    
-    private double compute(MathNode m) {
-        
-        
-    }
-    
-    
+    public String toString() { return Double.toString(this.result); }
+    public double getValue() { return result; }
 }
 
 
@@ -222,11 +219,14 @@ class CalculateVisitor extends MathNodeVisitor {
 // Also abstract base class for NumNode, which is isomorphic to a Leaf.
 abstract class MathNode {
     // All nodes should have children, except NumNodes, which are leaves.
+    public MathNode parent = null;
     public ArrayList<MathNode> children = new ArrayList<MathNode>();
     // All operational math nodes call this method to populate their children.
     protected void populate(MathNode... nodes) {
-        for (MathNode node : nodes)
+        for (MathNode node : nodes) {
+            node.parent = this;
             this.children.add(node);
+        }
     }
     
     // Visit is abstract -- different per concrete visitor.
