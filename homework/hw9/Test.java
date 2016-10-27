@@ -58,19 +58,25 @@ public class Test {
         for (MathNode tree : trees) {
             System.out.println("[========[ testing arithmetic tree ]========]");
             System.out.println("Computed value: " + tree.evaluate());
+            
             MathNodeVisitor infix = new InfixVisitor();
             tree.accept(infix);
             System.out.println("Infix expression: " + infix.toString());
+            
+            MathNodeVisitor lisp = new LispVisitor();
+            tree.accept(lisp);
+            System.out.println("Lisp expression: " + lisp.toString());
+            
+            
         }
     }
 
 }
 
 abstract class MathNodeVisitor {
-    //public abstract void visit(MathNode node); // defined by concrete visitors.
-    
-    private MathNode m;
-    public void visit(MathNode m) { this.m = m; }
+    public abstract void visit(MathNode node); // defined by concrete visitors.
+    //private MathNode m;
+    //public void visit(MathNode m) { this.m = m; }
 }
 
 // For a given math node, get the infix string representation from it.
@@ -106,8 +112,27 @@ class InfixVisitor extends MathNodeVisitor {
 
 
 class LispVisitor extends MathNodeVisitor {
+    private MathNode m;
+    public void visit(MathNode m) { this.m = m; }
     
+    private static String Lisp(MathNode m) {
+        int size = m.children.size();
+        if (size == 0) { return m.toString(); }
+        else if (size > 0) {
+            String exp = "(";
+            exp += m.toString() + " ";
+            for (int i = 0; i < size; i++) {
+                exp += Lisp(m.children.get(i));
+                if (i != size-1)
+                    exp += " ";
+            }
+            exp += ")";
+            return exp;
+        }
+        return null;
+    }
     
+    public String toString() { return Lisp(this.m); }
 }
 
 
@@ -133,7 +158,7 @@ abstract class MathNode {
             this.children.add(node);
         }
     }
-
+    
     // Visit is abstract -- different per concrete visitor.
     public void accept(MathNodeVisitor visitor) { visitor.visit(this); }
 
@@ -141,11 +166,9 @@ abstract class MathNode {
     // Calculate is our specific operation. Left up to concrete node.
     abstract protected double calculate();
     public double evaluate() { return calculate(); }
-
-    public String toString() {
-        // TODO: modify this such that you print all children?
-        return "";
-    }
+    
+    // No default implementation.
+    public String toString() { return null; }
 }
 
 // 'Leaf'-like class. NumNode has no children.
@@ -154,19 +177,11 @@ class NumNode extends MathNode {
     //private double value;
     public NumNode(int value) { this.value = value; }
     public double calculate() { return this.value; }
-    public String toString() {
-        /*
-        if ((this.value % 1) == 0)
-            return Integer.toString((int)this.value);
-        else
-            return Double.toString(this.value);
-        */
-        return Integer.toString(this.value);
-    }
+    public String toString() { return Integer.toString(this.value); }
 }
 
 // Operational nodes. Have no need for a constructor.
-// Only define a handy toString and their calculation operation.
+// Only define a handy toString() and their calculation operation.
 
 // Associative operations -- order does not matter.
 class AddNode extends MathNode {
