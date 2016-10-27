@@ -1,7 +1,8 @@
 import java.util.ArrayList;
 public class Test {
     public static void main(String[] args) {
-
+        ArrayList<MathNode> forest = new ArrayList<MathNode>();
+        
         // Test 1 -- Expression given in class.
         MathNode tree1 = new DivNode(
             new NumNode(1),
@@ -14,7 +15,7 @@ public class Test {
                 )
             )
         );
-        testTree(tree1);
+        forest.add(tree1);
 
         // Test 2 -- Test of all operations.
         // (0+-1) / (-1) / ((4*0.1) / (9-10)) = -2.5
@@ -27,40 +28,49 @@ public class Test {
             new DivNode(
                 new MultNode(
                     new NumNode(4),
-                    new NumNode(0.1)),
+                    new NumNode(1)),
                 new SubNode(
                     new NumNode(9),
                     new NumNode(10))
             )
         );
-        //testTree(tree2);
-
-        /*
-        MathNode simple = new AddNode(
-            new NumNode(1),
-            new NumNode(2),
-            new NumNode(3)
-        );
-        testTree(simple);
-        */
-
-
-
+        forest.add(tree2);
+        
+        
+        // Test 3 -- Fibonacci.
+        MathNode tree3 = new AddNode(
+            new NumNode(0),
+            new AddNode( new NumNode(1),
+                new AddNode( new NumNode(2),
+                    new AddNode( new NumNode(3),
+                        new AddNode( new NumNode(4),
+                            new NumNode(5)
+        )))));
+        forest.add(tree3);
+        
+        
+        // Test all created trees.
+        testTrees(forest);
     }
 
 
-    public static void testTree(MathNode tree) {
-        //System.out.println(tree.evaluate());
-        MathNodeVisitor v = new InfixVisitor();
-        tree.accept(v);
-        System.out.println(v.toString());
+    public static void testTrees(ArrayList<MathNode> trees) {
+        for (MathNode tree : trees) {
+            System.out.println("[========[ testing arithmetic tree ]========]");
+            System.out.println("Computed value: " + tree.evaluate());
+            MathNodeVisitor infix = new InfixVisitor();
+            tree.accept(infix);
+            System.out.println("Infix expression: " + infix.toString());
+        }
     }
 
 }
 
 abstract class MathNodeVisitor {
-    public abstract void visit(MathNode node); // defined by concrete visitors.
-    public abstract String toString(); // all conc visitors define this?
+    //public abstract void visit(MathNode node); // defined by concrete visitors.
+    
+    private MathNode m;
+    public void visit(MathNode m) { this.m = m; }
 }
 
 // For a given math node, get the infix string representation from it.
@@ -73,14 +83,11 @@ class InfixVisitor extends MathNodeVisitor {
         int size = m.children.size();
         if (size == 0) {
             // Bottom of recursion. Return NumNode number.
+            // This should be a numerical value. NOT AN OP NODE!
             return m.toString();
         } else if (size == 1) {
-            // Some nodes can have one element. Not sure what to do here...
-            // I mean, they're called binary operations for a reason.
-            // Add the identity element? Na I don't want to edit the visitor.
-            
-            
-            
+            // This should be a numerical value. Add the identity and evaluate.
+            return "(" + m.value + " " + m.toString() + " " + m.children.get(0) + ")";
         } else if (size >= 2) {
             // Print the recursive infix expression.
             String exp = "(";
@@ -98,6 +105,12 @@ class InfixVisitor extends MathNodeVisitor {
 }
 
 
+class LispVisitor extends MathNodeVisitor {
+    
+    
+}
+
+
 
 
 
@@ -111,7 +124,7 @@ abstract class MathNode {
     // All nodes should have children, except NumNodes, which are leaves.
     public ArrayList<MathNode> children = new ArrayList<MathNode>();
     // The identity element if an operative node, the value if a NumNode.
-    public double value;
+    public int value;
     
     // All operational math nodes call this method to populate their children.
     protected void populate(MathNode... nodes) {
@@ -139,13 +152,16 @@ abstract class MathNode {
 // Using doubles to save a bunch of casting.
 class NumNode extends MathNode {
     //private double value;
-    public NumNode(double value) { this.value = value; }
+    public NumNode(int value) { this.value = value; }
     public double calculate() { return this.value; }
     public String toString() {
+        /*
         if ((this.value % 1) == 0)
             return Integer.toString((int)this.value);
         else
             return Double.toString(this.value);
+        */
+        return Integer.toString(this.value);
     }
 }
 
