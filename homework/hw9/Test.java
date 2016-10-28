@@ -3,8 +3,6 @@ public class Test {
     public static void main(String[] args) throws Exception {
         ArrayList<MathNode> forest = new ArrayList<MathNode>();
         
-        
-        
         // Test 1 -- Expression given in class.
         MathNode tree1 = new DivNode(
             new NumNode(1),
@@ -79,7 +77,6 @@ public class Test {
         );
         forest.add(tree5);
         
-        
         // Test all created trees.
         testTrees(forest);
     }
@@ -150,6 +147,7 @@ class LispVisitor extends MathNodeVisitor {
     public String toString() { return Lisp(this.m); }
     
     private static String Lisp(MathNode m) {
+        // Similar to the infix, just print the operation first.
         int size = m.children.size();
         if (size == 0) { return m.toString(); }
         else {
@@ -196,22 +194,42 @@ class TextTreeVisitor extends MathNodeVisitor {
     }
 }
 
-// Not quite sure why Dave's asking for a value visitor.
-// The only way I've been able to come up with to calculate the result is via
-// having the nodes calculate the values of their children, which is an implicit
-// traversal via the given operation node.
 class ValueVisitor extends MathNodeVisitor {
     private MathNode m;
     private double result;
     public void visit(MathNode m) {
         this.m = m;
     }
-    public String toString() { return Double.toString(this.result); }
+    public String toString() { return Double.toString(Eval(this.m)); }
+    public double getValue() { return Eval(this.m); }
 
-    public double Eval(MathNode m) {
+    private double Eval(MathNode m) {
+        int size = m.children.size();
+        if (size == 0) {
+            // Reached a NumNode. Get the value.
+            return ((NumNode)m).value;
+        } else {
+            double result = Eval(m.children.get(0));
+            for (int i = 1; i < size; i++) {
+                result = parseOp(m.toString(), result, Eval(m.children.get(i)));
+            }
+            return result;
+        }
+    }
 
-
-
+    private static double parseOp(String operation, double oldval, double newval) {
+        // Parse the operation. Return the result of the operation.
+        switch(operation) {
+            case "+":
+                return oldval + newval;
+            case "*":
+                return oldval * newval;
+            case "-":
+                return oldval - newval;
+            case "/":
+                return oldval / newval;
+        }
+        return -1; // will never reach this.
     }
 
 }
@@ -227,98 +245,38 @@ abstract class MathNode {
     public MathNode parent = null;
     public ArrayList<MathNode> children = new ArrayList<MathNode>();
     // All operational math nodes call this method to populate their children.
-    protected void populate(MathNode... nodes) {
+    protected void populate(MathNode... nodes) throws Exception {
+        if (nodes.length <= 1)
+            throw new Exception("arithmetic operations require at least two operands!");
         for (MathNode node : nodes) {
             node.parent = this;
             this.children.add(node);
         }
     }
-    
     // Visit is abstract -- different per concrete visitor.
     public void accept(MathNodeVisitor visitor) { visitor.visit(this); }
-
-    // Evaluate is our abstract operation. Only called from client.
-    // Calculate is our specific operation. Left up to concrete node.
-    abstract protected double calculate();
-    
-    // No default implementation.
-    public String toString() { return null; }
 }
 
 // 'Leaf'-like class. NumNode has no children.
-// Using doubles to save a bunch of casting.
 class NumNode extends MathNode {
-    //private double value;
-    private int value;
+    public int value;
     public NumNode(int value) { this.value = value; }
-    public double calculate() { return this.value; }
     public String toString() { return Integer.toString(this.value); }
 }
-
-// Operational nodes. Have no need for a constructor.
-// Only define a handy toString() and their calculation operation.
-
-// Associative operations -- order does not matter.
+// Operational classes. Have no special members.
 class AddNode extends MathNode {
-    public AddNode(MathNode... nodes) throws Exception {
-        if (nodes.length <= 1)
-            throw new Exception("arithmetic operations require at least two operands!");
-        this.populate(nodes);
-    }
-    public double calculate() {
-        double sum = 0;
-        for (MathNode node : this.children)
-            sum += node.calculate();
-        return sum;
-    }
+    public AddNode(MathNode... nodes) throws Exception { this.populate(nodes); }
     public String toString() { return "+"; }
 }
-
-
 class MultNode extends MathNode {
-    public MultNode(MathNode... nodes) throws Exception {
-        if (nodes.length <= 1)
-            throw new Exception("arithmetic operations require at least two operands!");
-        this.populate(nodes);
-    }
-    public double calculate() {
-        double product = 1;
-        for (MathNode node: this.children)
-            product *= node.calculate();
-        return product;
-    }
+    public MultNode(MathNode... nodes) throws Exception { this.populate(nodes); }
     public String toString() { return "*"; }
 }
-
-
-// Non-associative operations -- order matters.
 class SubNode extends MathNode {
-    public SubNode(MathNode... nodes) throws Exception {
-        if (nodes.length <= 1)
-            throw new Exception("arithmetic operations require at least two operands!");
-        this.populate(nodes);
-    }
-    public double calculate() {
-        double difference = this.children.get(0).calculate();
-        for (int i = 1; i < this.children.size(); i++)
-            difference -= this.children.get(i).calculate();
-        return difference;
-    }
+    public SubNode(MathNode... nodes) throws Exception { this.populate(nodes); }
     public String toString() { return "-"; }
 }
-
-
 class DivNode extends MathNode {
-    public DivNode(MathNode... nodes) throws Exception  {
-        if (nodes.length <= 1)
-            throw new Exception("arithmetic operations require at least two operands!");
-        this.populate(nodes);
-    }
-    public double calculate() {
-        double quotient = this.children.get(0).calculate();
-        for (int i = 1; i < this.children.size(); i++)
-            quotient /= this.children.get(i).calculate();
-        return quotient;
-    }
+    public DivNode(MathNode... nodes) throws Exception  { this.populate(nodes); }
     public String toString() { return "/"; }
 }
