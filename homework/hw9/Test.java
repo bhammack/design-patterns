@@ -18,7 +18,6 @@ public class Test {
         forest.add(tree1);
         
         // Test 2 -- Test of all operations.
-        // (0+-1) / (-1) / ((4*0.1) / (9-10)) = -2.5
         MathNode tree2 = new DivNode(
             new AddNode(
                 new NumNode(0),
@@ -36,7 +35,6 @@ public class Test {
             )
         );
         forest.add(tree2);
-        
         
         // Test 3 -- simple additive tree.
         MathNode tree3 = new AddNode(
@@ -107,7 +105,6 @@ public class Test {
 }
 
 abstract class MathNodeVisitor {
-    // The visit operation is defined by concrete visitors.
     public abstract void visit(MathNode node);
 }
 
@@ -140,7 +137,6 @@ class InfixVisitor extends MathNodeVisitor {
     }
 }
 
-
 class LispVisitor extends MathNodeVisitor {
     private MathNode m;
     public void visit(MathNode m) { this.m = m; }
@@ -162,9 +158,7 @@ class LispVisitor extends MathNodeVisitor {
             return exp;
         }
     }
-    
 }
-
 
 class TextTreeVisitor extends MathNodeVisitor {
     private MathNode m;
@@ -180,12 +174,13 @@ class TextTreeVisitor extends MathNodeVisitor {
             String stem = "[" + m.toString() + "]\n";
             String branch = "";
             for (int i = 0; i < size; i++) {
+                branch += indent + "+---";
                 if (i != size-1)
                     // There are still children. Print a pipe.
-                    branch += indent + "+---" + Treeify(indent + "|    ", m.children.get(i));
+                    branch += Treeify(indent + "|    ", m.children.get(i));
                 else
                     // No child underneath me. Remove the pipe.
-                    branch += indent + "+---" + Treeify(indent + "     ", m.children.get(i));
+                    branch += Treeify(indent + "     ", m.children.get(i));
             }
             // Readd the new branch to the main stem.
             stem += branch;
@@ -231,10 +226,7 @@ class ValueVisitor extends MathNodeVisitor {
         }
         return -1; // will never reach this.
     }
-
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -253,7 +245,7 @@ abstract class MathNode {
             this.children.add(node);
         }
     }
-    // Visit is abstract -- different per concrete visitor.
+    // Visit operation defined by concrete visitor.
     public void accept(MathNodeVisitor visitor) { visitor.visit(this); }
 }
 
