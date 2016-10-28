@@ -205,10 +205,15 @@ class ValueVisitor extends MathNodeVisitor {
     private double result;
     public void visit(MathNode m) {
         this.m = m;
-        this.result = m.calculate();
     }
     public String toString() { return Double.toString(this.result); }
-    public double getValue() { return result; }
+
+    public double Eval(MathNode m) {
+
+
+
+    }
+
 }
 
 
@@ -235,7 +240,6 @@ abstract class MathNode {
     // Evaluate is our abstract operation. Only called from client.
     // Calculate is our specific operation. Left up to concrete node.
     abstract protected double calculate();
-    public double evaluate() { return calculate(); }
     
     // No default implementation.
     public String toString() { return null; }
